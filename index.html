@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2c1810">
+    <title>Cookie Clicker - Evolution Update</title>
+    <style>
+        /* ── RESET ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --wood-dark: #3e2723;
+            --wood-med:  #5d4037;
+            --wood-light:#8d6e63;
+            --paper:     #f4f1de;
+            --gold:      #ffd700;
+            --gold-dark: #b8860b;
+            --accent:    #8b4513;
+            --green:     #4caf50;
+            --green-dark:#2e7d32;
+            --red:       #c1440e;
+        }
+
+        /* ── BASE ── */
+        html, body {
+            height: 100%; width: 100%;
+            background: #0d0a06;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* On desktop: show phone-sized container centered */
+        @media (min-width: 600px) {
+            #splash, #game {
+                max-width: 430px !important;
+                width: 430px !important;
+                max-height: 932px;
+                height: min(932px, 100vh) !important;
+                border-radius: 36px !important;
+                box-shadow: 0 0 0 8px #222, 0 0 0 9px #444, 0 40px 100px rgba(0,0,0,.9);
+                position: relative !important;
+                overflow: hidden !important;
+            }
+        }
+
+        /* ════════════════════════════
+           SPLASH SCREEN
+        ════════════════════════════ */
+        #splash {
+            position: fixed; inset: 0;
+            background: linear-gradient(160deg, #2c1810 0%, #3e2415 60%, #5d4037 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 500;
+            transition: opacity .4s;
+        }
+        #splash.hide { opacity: 0; pointer-events: none; }
+
+        .sp-title {
+            font-size: clamp(28px, 8vw, 52px);
+            font-weight: bold; color: var(--gold);
+            text-shadow: 2px 2px 6px rgba(0,0,0,.8);
+            font-family: Georgia, serif;
+            text-align: center; padding: 0 16px;
+        }
+        .sp-grandma { font-size: clamp(80px, 22vw, 160px); margin: 12px 0; }
+        .sp-sub {
+            font-size: clamp(14px, 4vw, 28px);
+            color: var(--paper); margin-bottom: 20px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,.8);
+        }
+        .sp-icons { display: flex; gap: 12px; margin-bottom: 28px; font-size: clamp(30px, 9vw, 50px); }
+
+        .sp-btn {
+            padding: 14px 36px; font-size: clamp(18px, 5vw, 28px);
+            font-weight: bold; border: none; border-radius: 14px;
+            background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-dark) 100%);
+            color: white; cursor: pointer; margin: 6px;
+            box-shadow: 0 5px 0 #1a0a04;
+            transition: transform .1s;
+            min-width: 180px;
+        }
+        .sp-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1a0a04; }
+        .sp-btn-sm { font-size: clamp(14px, 4vw, 22px); padding: 10px 24px; min-width: 140px; }
+
+        /* ════════════════════════════
+           MAIN GAME LAYOUT
+           Flexbox column, fills viewport
+        ════════════════════════════ */
+        #game {
+            display: none;
+            flex-direction: column;
+            height: 100dvh; /* dynamic viewport height */
+            width: 100%;
+            background: #c9986a;
+            overflow: hidden;
+        }
+        #game.show { display: flex; }
+
+        /* TOP BAR */
+        #topbar {
+            background: var(--wood-dark);
+            padding: 6px 12px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+            border-bottom: 3px solid var(--gold-dark);
+        }
+        #save-icon { font-size: 22px; opacity: 0; transition: opacity .3s; }
+        #topbar-stats { text-align: center; flex: 1; }
+        #cookie-count { font-size: clamp(18px, 5vw, 28px); font-weight: bold; color: var(--gold); display: block; }
+        #cps-row { font-size: clamp(10px, 3vw, 16px); color: #ccc; }
+        #evo-bonus-info { font-size: clamp(9px, 2.5vw, 14px); color: #87ceeb; }
+        #topbar-btns { display: flex; gap: 6px; }
+        .tb-btn { font-size: clamp(20px, 6vw, 32px); background: none; border: none; cursor: pointer; padding: 2px; }
+
+        /* YT BOOST TIMER */
+        #yt-boost-timer {
+            display: none;
+            background: rgba(26,100,50,.2);
+            border-top: 3px solid #1a7a3a;
+            padding: 7px 14px;
+            font-size: clamp(14px, 4vw, 20px);
+            font-weight: bold;
+            color: #1a5c2a;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* CLICK MULTIPLIER */
+        #click-mult-bar {
+            display: none;
+            background: rgba(180,60,10,.18);
+            border-top: 3px solid #c03d00;
+            padding: 7px 14px;
+            font-size: clamp(14px, 4vw, 20px);
+            color: #7a2000; font-weight: bold;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* EVO PROGRESS */
+        #evo-bar-wrap {
+            padding: 5px 10px;
+            background: #1a1a1a;
+            flex-shrink: 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        #evo-trigger-btn {
+            font-size: clamp(22px, 6.5vw, 34px);
+            display: none; cursor: pointer;
+            background: none; border: none;
+            flex-shrink: 0;
+            touch-action: manipulation;
+        }
+        #evo-trigger-btn.ready { animation: evoPop .8s infinite alternate; }
+        @keyframes evoPop { from { transform: scale(1); } to { transform: scale(1.2); } }
+        #evo-track {
+            flex: 1; height: clamp(26px, 6vw, 34px);
+            background: #333; border-radius: 14px;
+            overflow: hidden; position: relative;
+        }
+        #evo-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #2980b9, #5dade2);
+            border-radius: 14px;
+            transition: width .3s;
+        }
+        #evo-text {
+            position: absolute; inset: 0;
+            font-size: clamp(11px, 3vw, 15px); font-weight: bold; color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,.9);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* COOKIE CLICK AREA */
+        #cookie-area {
+            flex: 1;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+            max-height: 42vh;
+        }
+        #cookie {
+            font-size: clamp(130px, 38vw, 200px);
+            cursor: pointer;
+            user-select: none;
+            will-change: transform;
+            transition: transform .08s ease-out;
+            -webkit-tap-highlight-color: transparent;
+            line-height: 1;
+        }
+        /* Cookie bounce animation */
+        @keyframes cookieBounce {
+            0%   { transform: scale(1); }
+            25%  { transform: scale(.83); }
+            65%  { transform: scale(1.07); }
+            100% { transform: scale(1); }
+        }
+        #cookie.bounce { animation: cookieBounce 0.2s ease-out; }
+        @media (min-width: 600px) {
+            #cookie { font-size: 190px; }
+        }
+
+        #combo-indicator {
+            position: absolute; top: 6px; left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(36px, 10vw, 58px);
+            font-weight: bold; color: #ff6b35;
+            text-shadow: 2px 2px 0 rgba(0,0,0,.8), 0 0 12px rgba(255,107,53,.6);
+            pointer-events: none; display: none;
+            z-index: 15;
+        }
+
+        /* Canvas for particles */
+        #pcanvas {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* Floating numbers - bigger and appear above the finger */
+        .fn {
+            position: absolute; pointer-events: none; z-index: 11;
+            font-size: clamp(28px, 8vw, 44px);
+            font-weight: bold; color: #fff;
+            text-shadow: 0 0 6px rgba(211,84,0,1), 2px 2px 0 rgba(0,0,0,.9);
+            display: none; will-change: transform, opacity;
+        }
+
+        /* Golden cookie */
+        .golden-cookie {
+            position: absolute; z-index: 25;
+            font-size: clamp(48px, 14vw, 72px);
+            cursor: pointer;
+            animation: gFloat 2s ease-in-out infinite;
+            will-change: transform;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        @keyframes gFloat { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-8px) rotate(5deg)} }
+        .golden-timer {
+            position: absolute; top: -22px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,.8); color: var(--gold);
+            padding: 2px 8px; border-radius: 6px;
+            font-size: 12px; font-weight: bold; white-space: nowrap;
+        }
+
+        /* ── BOTTOM PANEL: shop + achievements ── */
+        #bottom-panel {
+            flex-shrink: 0;
+            background: var(--wood-dark);
+            border-top: 3px solid var(--gold-dark);
+            display: flex;
+            /* flex-grow to fill remaining space below cookie area */
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* SHOP column — no overflow, items shrink to fit */
+        #shop-col {
+            flex: 1;
+            padding: 5px;
+            display: flex; flex-direction: column;
+            gap: 3px;
+            overflow: hidden; /* no scroll — items size to fit */
+        }
+        .upg-btn {
+            display: flex; align-items: center;
+            background: var(--wood-med);
+            border: none; border-radius: 8px;
+            padding: 4px 7px; cursor: pointer;
+            color: white; text-align: left;
+            flex: 1; /* each button takes equal share */
+            min-height: 0;
+            transition: transform .08s;
+            touch-action: manipulation;
+        }
+        .upg-btn:active:not(:disabled) { transform: scale(.97); }
+        .upg-btn:disabled { opacity: .45; }
+        .upg-icon { font-size: clamp(18px, 5vw, 26px); margin-right: 6px; flex-shrink: 0; }
+        .upg-info { flex: 1; min-width: 0; }
+        .upg-name { font-size: clamp(10px, 2.8vw, 14px); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .upg-cost { font-size: clamp(9px, 2.4vw, 12px); color: var(--gold); }
+        .upg-pwr  { font-size: clamp(8px, 2.2vw, 11px); color: #aed6f1; }
+        .upg-cnt  { font-size: clamp(9px, 2.4vw, 12px); color: #aaa; flex-shrink: 0; margin-left: 3px; }
+
+        /* ACHIEVEMENTS column — no overflow */
+        #ach-col {
+            width: clamp(130px, 36vw, 200px);
+            padding: 5px;
+            display: flex; flex-direction: column;
+            gap: 3px;
+            background: rgba(0,0,0,.2);
+            border-left: 2px solid rgba(255,215,0,.3);
+            overflow: hidden;
+        }
+        /* Cookie-71 style achievement card */
+        .ach-card {
+            background: var(--paper);
+            border: 3px solid var(--gold);
+            border-right-color: var(--gold-dark);
+            border-bottom-color: var(--gold-dark);
+            border-radius: 8px;
+            padding: 3px 5px;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+        }
+        /* Top row: name left, reward right */
+        .ach-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 2px;
+        }
+        .ach-name {
+            font-size: clamp(9px, 2.6vw, 13px);
+            font-weight: bold;
+            color: #3b230f;
+            line-height: 1.1;
+            flex: 1;
+        }
+        .ach-reward {
+            font-size: clamp(8px, 2.3vw, 11px);
+            font-weight: bold;
+            color: #2f6b1f;
+            text-align: right;
+            line-height: 1.1;
+            flex-shrink: 0;
+        }
+        /* Cupcake bonus icon — small, inline before bar */
+        .ach-bonus {
+            font-size: clamp(9px, 2.5vw, 12px);
+            animation: achBounce 1.2s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes achBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+        /* Progress bar */
+        .ach-track {
+            width: 100%;
+            height: clamp(13px, 3.5vw, 18px);
+            background: linear-gradient(180deg, #2c2c2c 0%, #1a1a1a 50%, #0d0d0d 100%);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+            border: 1px solid #555;
+        }
+        .ach-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7bc043 0%, #4e9a2a 100%);
+            border-radius: 5px;
+            position: absolute; top: 0; left: 0;
+            transition: width .3s;
+        }
+        /* Progress text centered on the bar */
+        .ach-prog {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(7px, 2vw, 10px);
+            font-weight: bold;
+            color: #d4af37;
+            text-shadow: 0 1px 3px rgba(0,0,0,.9);
+            z-index: 2;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* ════════════════════════════
+           MODALS (universal)
+        ════════════════════════════ */
+        .modal-bg {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.85);
+            display: none; align-items: center; justify-content: center;
+            z-index: 200;
+        }
+        .modal-bg.show { display: flex; }
+        .modal-box {
+            background: var(--paper);
+            border-radius: 20px; padding: 24px;
+            max-width: 90vw; width: 360px;
+            max-height: 90vh; overflow-y: auto;
+            text-align: center;
+            border: 4px solid var(--wood-dark);
+        }
+        .modal-box h2 { font-size: clamp(18px, 5vw, 26px); color: var(--accent); margin-bottom: 12px; }
+        .modal-box p  { font-size: clamp(13px, 3.5vw, 17px); color: #333; line-height: 1.5; margin-bottom: 10px; }
+        .modal-btn {
+            padding: 12px 28px; font-size: clamp(14px, 4vw, 18px);
+            font-weight: bold; border: none; border-radius: 12px;
+            cursor: pointer; margin: 5px;
+            box-shadow: 0 4px 0 rgba(0,0,0,.3);
+            transition: transform .1s;
+        }
+        .modal-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+        .btn-green  { background: var(--green);  color: white; }
+        .btn-red    { background: #e74c3c; color: white; }
+        .btn-gold   { background: var(--gold);   color: var(--accent); }
+        .btn-wood   { background: var(--wood-med); color: white; }
+        .btn-grey   { background: #888; color: white; }
+
+        /* EVO modal */
+        #evo-modal .modal-box { background: linear-gradient(135deg, #1a1a2e, #16213e); border-color: #3498db; }
+        #evo-modal h2 { color: #5dade2; }
+        #evo-modal p { color: #ccc; }
+        .warn-text { color: #e74c3c !important; font-weight: bold; }
+
+        /* Golden bonus modal */
+        #golden-modal .modal-box { background: linear-gradient(135deg, var(--gold), #ffe55c); border-color: var(--gold-dark); }
+        #golden-modal h2 { color: var(--accent); }
+        #golden-modal-icon { font-size: 64px; margin: 8px 0; }
+        #golden-modal-desc { font-size: clamp(14px, 4vw, 18px); font-weight: bold; color: var(--accent); }
+        /* High contrast dark text on gold background */
+        #golden-modal-val  { font-size: clamp(18px, 5vw, 26px); color: #1a0a00; font-weight: bold; text-shadow: none; background: rgba(0,0,0,.12); border-radius: 8px; padding: 4px 10px; display: inline-block; margin-top: 4px; }
+
+        /* Daily reward modal */
+        #daily-modal .modal-box { background: linear-gradient(135deg, var(--gold), #ffe55c); border-color: var(--gold-dark); }
+        #daily-icon { font-size: 72px; }
+        #daily-modal h2 { color: var(--accent); }
+
+        /* YT Modal */
+        #yt-modal .modal-box { background: #111; border-color: #333; width: min(95vw, 680px); }
+        #yt-modal h2 { color: white; }
+        #yt-player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; margin: 10px 0; }
+        #yt-player-wrap iframe, #yt-player-wrap #player { width: 100% !important; height: 100% !important; }
+        /* High contrast YT timer text */
+        #yt-timer { color: #fff; font-size: clamp(14px, 4vw, 20px); font-weight: bold; margin: 6px 0; background: rgba(255,255,255,.08); border-radius: 6px; padding: 4px 8px; }
+        #claim-btn { background: #555; color: #ccc; cursor: not-allowed; }
+        #claim-btn.active { background: var(--gold); color: #1a0800; font-weight: bold; cursor: pointer; }
+
+        /* Options modal */
+        #options-modal label { display: block; font-size: clamp(13px, 3.5vw, 17px); margin: 10px 0; text-align: left; color: #333; }
+        #options-modal input[type=range] { width: 100%; margin-top: 4px; }
+
+        /* Stats modal */
+        .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; font-size: clamp(12px, 3.3vw, 16px); }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-lbl { color: #555; }
+        .stat-val { color: var(--accent); font-weight: bold; }
+
+        /* Bonus shop */
+        #bonus-modal .modal-box { width: min(95vw, 420px); background: #1a1a1a; border-color: #9b59b6; }
+        #bonus-modal h2 { color: #c39bd3; }
+        #bonus-wallet { color: var(--gold); font-size: clamp(14px, 4vw, 18px); margin-bottom: 12px; }
+        .bitem { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; }
+        .bitem-icon { font-size: 32px; flex-shrink: 0; }
+        .bitem-info { flex: 1; }
+        .bitem-info h4 { color: white; font-size: clamp(12px, 3.3vw, 16px); margin-bottom: 2px; }
+        .bitem-info p  { color: #aaa; font-size: clamp(10px, 2.8vw, 13px); }
+        .bitem-cost { color: var(--gold); font-size: clamp(11px, 3vw, 14px); }
+        .bbuy-btn { padding: 8px 14px; font-size: clamp(12px, 3.3vw, 15px); font-weight: bold; border: none; border-radius: 8px; background: var(--wood-med); color: white; cursor: pointer; }
+        .bbuy-btn:disabled { background: #444; color: #666; cursor: not-allowed; }
+
+        /* Recipe book */
+        #recipe-modal .modal-box { width: min(95vw, 400px); }
+        .ritem { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #ddd; }
+        .ritem.locked { opacity: .45; }
+        .ritem-icon { font-size: 28px; margin-right: 10px; }
+        .ritem-name { font-weight: bold; font-size: clamp(13px, 3.5vw, 17px); color: var(--accent); }
+        .ritem-level { font-size: 12px; color: #888; }
+
+        /* Ending modal */
+        #ending-modal .modal-box { background: linear-gradient(135deg, var(--gold), #ffe55c); border-color: var(--gold-dark); width: min(95vw, 420px); }
+        #ending-modal h1 { font-size: clamp(20px, 6vw, 30px); color: var(--accent); margin-bottom: 8px; }
+        #ending-modal .big-emoji { font-size: 64px; }
+        .ending-stat { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(139,69,19,.2); font-size: clamp(12px, 3.3vw, 16px); color: var(--accent); }
+
+        /* Splash Options / Stats overlay */
+        #sp-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,.7);
+            display: none; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+        #sp-overlay.show { display: flex; }
+        #sp-overlay .modal-box { background: var(--paper); }
+
+        /* Scrollbar styling for bottom panel */
+        #shop-col::-webkit-scrollbar, #ach-col::-webkit-scrollbar { width: 4px; }
+        #shop-col::-webkit-scrollbar-track, #ach-col::-webkit-scrollbar-track { background: transparent; }
+        #shop-col::-webkit-scrollbar-thumb, #ach-col::-webkit-scrollbar-thumb { background: rgba(255,255,255,.3); border-radius: 2px; }
+
+        /* Evolution flash overlay */
+        #evo-flash { position: fixed; inset: 0; background: white; pointer-events: none; opacity: 0; z-index: 999; transition: opacity .15s; }
+        #evo-flash.flash { opacity: .8; }
+
+        /* Toast notification */
+        #toast {
+            position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
+            background: var(--gold); color: var(--accent);
+            padding: 10px 24px; border-radius: 16px;
+            font-size: clamp(14px, 4vw, 20px); font-weight: bold;
+            z-index: 998; transition: top .3s ease;
+            text-align: center; max-width: 90vw;
+            border: 3px solid var(--gold-dark);
+        }
+        /* Shop notif pulse */
+        @keyframes shopPulse {
+            0%,100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(255,215,0,0.6)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(255,215,0,1)); }
+        }
+        .shop-notif { animation: shopPulse 1.5s infinite ease-in-out; }
+        /* YT trigger pulse */
+        @keyframes ytPulse {
+            0%,100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(46,204,113,0.6)); }
+            50% { transform: scale(1.12); filter: drop-shadow(0 0 12px rgba(46,204,113,1)); }
+        }
+        .yt-notif { animation: ytPulse 1.5s infinite ease-in-out; }
+        /* Evo side button pulse */
+        @keyframes evoSidePulse {
+            0%,100% { transform: translateY(-50%) scale(1); filter: drop-shadow(0 0 8px gold); }
+            50% { transform: translateY(-50%) scale(1.2); filter: drop-shadow(0 0 20px gold); }
+        }
+        #evo-side-btn { animation: evoSidePulse 1s infinite alternate; }
+        /* Fix multiplier text colors darker - handled above */
+        /* Fix YT boost timer text darker - handled above */
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SPLASH SCREEN
+══════════════════════════════════════ -->
+<div id="splash">
+    <div class="sp-title">GRANDMA'S COOKIES</div>
+    <div class="sp-grandma">👵</div>
+    <div class="sp-sub">Sweet Baking Adventure</div>
+    <div class="sp-icons"><span>🍪</span><span>🧁</span><span>🍩</span><span>🍰</span></div>
+    <button class="sp-btn" id="play-btn" onclick="playSfxMenu(1200);startGame()">🎮 PLAY</button>
+    <button class="sp-btn sp-btn-sm" onclick="playSfxMenu(800);showSplashPanel('options')">⚙️ OPTIONS</button>
+    <button class="sp-btn sp-btn-sm" onclick="playSfxMenu(800);showSplashPanel('stats')">📊 STATISTICS</button>
+    <div id="sp-overlay">
+        <div class="modal-box">
+            <!-- filled dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN GAME
+══════════════════════════════════════ -->
+<div id="game">
+    <!-- TOP BAR -->
+    <div id="topbar">
+        <div id="save-icon">💾</div>
+        <div id="topbar-stats">
+            <span id="cookie-count">0</span>
+            <div id="cps-row">CPS: <span id="cps-count">0</span> | Click: +<span id="click-power-count">1</span></div>
+            <div id="evo-bonus-info">Permanent Bonus: +0%</div>
+        </div>
+        <div id="topbar-btns">
+            <button class="tb-btn" onclick="openRecipeModal()">📖</button>
+            <button class="tb-btn" onclick="openOptionsModal()">⚙️</button>
+        </div>
+    </div>
+
+    <!-- YT BOOST TIMER -->
+    <div id="yt-boost-timer">
+        ⚡ BOOST ACTIVE: <span id="boost-sec">60</span>s remaining — ×5 everything!
+    </div>
+
+    <!-- CLICK MULTIPLIER -->
+    <div id="click-mult-bar">
+        🔥 CLICK ×<span id="mult-value">10</span>! &nbsp; ⏱️ <span id="mult-timer">20</span>s
+    </div>
+
+    <!-- EVO PROGRESS BAR -->
+    <div id="evo-bar-wrap">
+        <div id="evo-track">
+            <div id="evo-fill"></div>
+            <div id="evo-text">0 / 1M</div>
+        </div>
+    </div>
+
+    <!-- COOKIE CLICK AREA -->
+    <div id="cookie-area">
+        <canvas id="pcanvas"></canvas>
+        <button id="evo-side-btn" onclick="openEvoModal()" style="display:none;position:absolute;right:10px;top:50px;font-size:clamp(34px,10vw,52px);background:none;border:none;cursor:pointer;z-index:20;touch-action:manipulation;line-height:1;filter:drop-shadow(0 0 8px gold);">🍪</button>
+        <div id="combo-indicator"><span id="combo-text">2x</span></div>
+        <!-- Floating buttons top-left of cookie area -->
+        <button id="bonus-shop-btn" onclick="openBonusShop()" style="position:absolute;left:10px;bottom:8px;font-size:clamp(32px,10vw,52px);background:none;border:none;cursor:pointer;z-index:20;touch-action:manipulation;line-height:1;">🛒</button>
+        <button id="yt-trigger" onclick="openYTModal()" style="display:none;position:absolute;left:10px;top:50px;font-size:clamp(32px,10vw,52px);background:none;border:none;cursor:pointer;z-index:20;touch-action:manipulation;line-height:1;">📺</button>
+        <div id="cookie">🍪</div>
+    </div>
+
+    <!-- BOTTOM PANEL -->
+    <div id="bottom-panel">
+        <div id="shop-col">
+            <button class="upg-btn" id="upg_click" onclick="buyClickUpgrade()">
+                <span class="upg-icon">👆</span>
+                <div class="upg-info">
+                    <div class="upg-name">Finger</div>
+                    <div class="upg-cost" id="desc_click">Cost: 10</div>
+                    <div class="upg-pwr"  id="pwr_info_click">Power: +1</div>
+                </div>
+                <span class="upg-cnt" id="cnt_click">x0</span>
+            </button>
+            <button class="upg-btn" id="upg_1" onclick="buyAutoUpgrade('1')">
+                <span class="upg-icon">🖱️</span>
+                <div class="upg-info">
+                    <div class="upg-name">Clicker</div>
+                    <div class="upg-cost" id="desc_1">Cost: 15</div>
+                    <div class="upg-pwr"  id="pwr_info_1">Power: +1</div>
+                </div>
+                <span class="upg-cnt" id="cnt_1">x0</span>
+            </button>
+            <button class="upg-btn" id="upg_2" onclick="buyAutoUpgrade('2')">
+                <span class="upg-icon">👵</span>
+                <div class="upg-info">
+                    <div class="upg-name">Grandma</div>
+                    <div class="upg-cost" id="desc_2">Cost: 100</div>
+                    <div class="upg-pwr"  id="pwr_info_2">Power: +5</div>
+                </div>
+                <span class="upg-cnt" id="cnt_2">x0</span>
+            </button>
+            <button class="upg-btn" id="upg_bakery" onclick="buyAutoUpgrade('bakery')">
+                <span class="upg-icon">🧁</span>
+                <div class="upg-info">
+                    <div class="upg-name">Shop</div>
+                    <div class="upg-cost" id="desc_bakery">Cost: 500</div>
+                    <div class="upg-pwr"  id="pwr_info_bakery">Power: +20</div>
+                </div>
+                <span class="upg-cnt" id="cnt_bakery">x0</span>
+            </button>
+            <button class="upg-btn" id="upg_3" onclick="buyAutoUpgrade('3')">
+                <span class="upg-icon">🏭</span>
+                <div class="upg-info">
+                    <div class="upg-name">Factory</div>
+                    <div class="upg-cost" id="desc_3">Cost: 2000</div>
+                    <div class="upg-pwr"  id="pwr_info_3">Power: +100</div>
+                </div>
+                <span class="upg-cnt" id="cnt_3">x0</span>
+            </button>
+        </div>
+        <div id="ach-col" id="ach-container"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- EVO -->
+<div id="evo-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2 id="evo-modal-title">Evolution!</h2>
+        <p id="evo-modal-desc" style="white-space:pre-line"></p>
+        <p class="warn-text">⚠️ Cookies and upgrades will be reset!</p>
+        <button class="modal-btn btn-gold" onclick="evolveGame()">EVOLVE NOW</button>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();closeModal('evo-modal')">Cancel</button>
+    </div>
+</div>
+
+<!-- GOLDEN BONUS -->
+<div id="golden-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2>🌟 GOLDEN COOKIE! 🌟</h2>
+        <div id="golden-modal-icon">🍪</div>
+        <div id="golden-modal-desc">Bonus!</div>
+        <div id="golden-modal-val">+1,000,000 🍪</div>
+        <button class="modal-btn btn-gold" onclick="activateGoldenBonus()" style="margin-top:12px">OK!</button>
+    </div>
+</div>
+
+<!-- DAILY REWARD -->
+<div id="daily-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2>🎁 DAILY REWARD! 🎁</h2>
+        <div id="daily-icon">🧁</div>
+        <p style="font-size:clamp(16px,4.5vw,22px);font-weight:bold;color:var(--accent)">+25 Cupcakes!</p>
+        <button class="modal-btn btn-green" onclick="claimDailyReward()">CLAIM</button>
+    </div>
+</div>
+
+<!-- YT -->
+<div id="yt-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2>Bonus from Little Lego Designer!</h2>
+        <div id="yt-player-wrap"><div id="player"></div></div>
+        <div id="yt-timer">Watch: 30s</div>
+        <button id="claim-btn" class="modal-btn" onclick="claimYTBonus()">Claim ×5 + 10 🧁</button>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();closeModal('yt-modal');ytClose()">Close</button>
+        <p style="color:#555;font-size:12px;margin-top:8px">💡 Disable ad blocker if video doesn't load</p>
+    </div>
+</div>
+
+<!-- OPTIONS -->
+<div id="options-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2>⚙️ Options</h2>
+        <label>🎵 Music <input type="range" id="bg-volume" min="0" max="1" step="0.1" value="0.2" oninput="updateMusicVol()"></label>
+        <label>🔊 Sounds <input type="range" id="sfx-volume" min="0" max="1" step="0.1" value="0.5"></label>
+        <button class="modal-btn btn-red" onclick="resetGame()" style="display:none;margin-top:10px;width:100%">🗑️ Reset Game</button>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();closeModal('options-modal')">Close</button>
+    </div>
+</div>
+
+<!-- STATS -->
+<div id="stats-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2>📊 Statistics</h2>
+        <div class="stat-row"><span class="stat-lbl">🍪 Total Cookies</span><span class="stat-val" id="stat-all-cookies">0</span></div>
+        <div class="stat-row"><span class="stat-lbl">👆 Total Clicks</span><span class="stat-val" id="stat-all-clicks">0</span></div>
+        <div class="stat-row"><span class="stat-lbl">⏱️ Play Time</span><span class="stat-val" id="stat-all-time">0m</span></div>
+        <div class="stat-row"><span class="stat-lbl">🌟 Golden Cookies</span><span class="stat-val" id="stat-golden">0</span></div>
+        <div class="stat-row"><span class="stat-lbl">🧁 Total Cupcakes</span><span class="stat-val" id="stat-cupcakes">0</span></div>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();closeModal('stats-modal')" style="margin-top:12px">Close</button>
+    </div>
+</div>
+
+<!-- BONUS SHOP -->
+<div id="bonus-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2>🛒 Bonus Shop</h2>
+        <div id="bonus-wallet">Your Cupcakes: <span id="bonus-wallet-val">0</span> 🧁</div>
+        <div id="bonus-items-list"></div>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();closeModal('bonus-modal')" style="margin-top:10px">Close</button>
+    </div>
+</div>
+
+<!-- RECIPE BOOK -->
+<div id="recipe-modal" class="modal-bg">
+    <div class="modal-box">
+        <h2>📖 Grandma's Recipe Book</h2>
+        <p id="recipes-progress" style="color:#888;font-size:14px;margin-bottom:10px"></p>
+        <div id="recipes-list"></div>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();closeModal('recipe-modal')" style="margin-top:10px">Close</button>
+    </div>
+</div>
+
+<!-- ENDING -->
+<div id="ending-modal" class="modal-bg">
+    <div class="modal-box">
+        <h1>🎉 CONGRATULATIONS! 🎉</h1>
+        <div class="big-emoji">👵</div>
+        <p style="color:var(--accent)"><strong>"Thank you, dear!"</strong></p>
+        <div id="ending-stats" style="margin:12px 0">
+            <div class="ending-stat"><span>🍪 Recipes</span><span>15/15</span></div>
+            <div class="ending-stat"><span>🧁 Cupcakes</span><span id="e-cupcakes">0</span></div>
+            <div class="ending-stat"><span>⏱️ Play time</span><span id="e-time">0m</span></div>
+            <div class="ending-stat"><span>🎯 Evolutions</span><span>14</span></div>
+            <div class="ending-stat"><span>🍪 Cookies</span><span id="e-cookies">0</span></div>
+        </div>
+        <button class="modal-btn btn-green" onclick="startNewGamePlus()">🔄 NEW GAME+ (×2)</button>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();closeModal('ending-modal')">📖 Close</button>
+    </div>
+</div>
+
+<!-- EVOLUTION FLASH -->
+<div id="evo-flash"></div>
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MUSIC -->
+<audio id="menu-music" loop><source src="menu-music.mp3" type="audio/mpeg"></audio>
+<audio id="game-music"  loop><source src="game-music.mp3"  type="audio/mpeg"></audio>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+// ══════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════
+function fNum(num) {
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    if (num < 1000) return Math.floor(num).toString();
+    const suffixes = [
+        {v:1e3,s:" K"},{v:1e6,s:" M"},{v:1e9,s:" B"},
+        {v:1e12,s:" T"},{v:1e15,s:" Qa"},{v:1e18,s:" Qi"}
+    ];
+    for (let i = suffixes.length-1; i >= 0; i--)
+        if (num >= suffixes[i].v) return (num/suffixes[i].v).toFixed(2)+suffixes[i].s;
+}
+function formatTime(s) {
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
+    return h>0?`${h}h ${m}m`:`${m}m`;
+}
+function simpleHash(str) {
+    let h=0;
+    for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h=h&h;}
+    return h.toString(36);
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function showToast(msg, ms=2000) {
+    const t=document.getElementById('toast');
+    t.innerHTML=msg; t.classList.add('show');
+    clearTimeout(t._tid);
+    t._tid=setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+// ══════════════════════════════════════════════════
+//  AUDIO
+// ══════════════════════════════════════════════════
+const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+let _lastSfxTime=0, _activeSfxCount=0;
+let _lastAchSoundTime=0;
+
+function _playSfxNow(freq, dur=0.12, type='sine', vol=null) {
+    const now=audioCtx.currentTime;
+    const v=vol!==null?vol:parseFloat(document.getElementById('sfx-volume')?.value||0.5);
+    if(v===0) return;
+    try {
+        const osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
+        osc.type=type;
+        osc.frequency.setValueAtTime(freq,now);
+        gain.gain.setValueAtTime(v,now);
+        gain.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(now+dur);
+    } catch(e){}
+}
+
+function playSfx(freq) {
+    const now=audioCtx.currentTime;
+    if((now-_lastSfxTime)<0.08 || _activeSfxCount>=2) return;
+    const vol=parseFloat(document.getElementById('sfx-volume')?.value||0.5);
+    if(vol===0) return;
+    _lastSfxTime=now; _activeSfxCount++;
+    setTimeout(()=>{_activeSfxCount=Math.max(0,_activeSfxCount-1)},120);
+    if(audioCtx.state==='suspended') audioCtx.resume().then(()=>_playSfxNow(freq,0.12,'sine',vol));
+    else _playSfxNow(freq,0.12,'sine',vol);
+}
+
+// Ładny dźwięk zamknięcia - opadający dwudźwięk
+function playSfxClose() {
+    const resume = () => {
+        const v=parseFloat(document.getElementById('sfx-volume')?.value||0.5);
+        if(v===0) return;
+        _playSfxNow(520, 0.10, 'sine', v*0.8);
+        setTimeout(()=>_playSfxNow(360, 0.14, 'sine', v*0.6), 70);
+    };
+    if(audioCtx.state==='suspended') audioCtx.resume().then(resume); else resume();
+}
+
+// Dźwięk przycisków menu (przed startem gry)
+function playSfxMenu(freq) {
+    audioCtx.resume().then(()=>_playSfxNow(freq,0.12,'sine',0.4)).catch(()=>{});
+}
+
+function updateMusicVol() {
+    const v=document.getElementById('bg-volume').value;
+    document.getElementById('menu-music').volume=v;
+    document.getElementById('game-music').volume=v;
+}
+
+// Globalny handler — dźwięk + animacja dla KAŻDEGO przycisku
+document.addEventListener('pointerdown', e => {
+    const btn = e.target.closest('button, .sp-btn, .modal-btn, .tb-btn, .upg-btn, .bbuy-btn');
+    if(!btn || btn.disabled) return;
+    // Animacja wciśnięcia
+    btn.style.transition='transform 0.08s';
+    btn.style.transform='scale(0.93)';
+    const restore=()=>{ btn.style.transform=''; };
+    btn.addEventListener('pointerup', restore, {once:true});
+    btn.addEventListener('pointercancel', restore, {once:true});
+    btn.addEventListener('pointerleave', restore, {once:true});
+});
+
+
+// ══════════════════════════════════════════════════
+//  CANVAS PARTICLE SYSTEM
+// ══════════════════════════════════════════════════
+let _pCanvas=null, _pCtx=null, _pW=0, _pH=0;
+const _parts=[];
+const _eCache={};
+function _getEC(char,size) {
+    const k=char+size;
+    if(_eCache[k]) return _eCache[k];
+    const c=document.createElement('canvas');
+    c.width=size+4; c.height=size+4;
+    const x=c.getContext('2d');
+    x.font=size+'px serif'; x.textBaseline='middle'; x.textAlign='center';
+    x.fillText(char,(size+4)/2,(size+4)/2);
+    return (_eCache[k]=c);
+}
+function initCanvas() {
+    _pCanvas=document.getElementById('pcanvas');
+    const area=document.getElementById('cookie-area');
+    _pW=area.offsetWidth; _pH=area.offsetHeight;
+    _pCanvas.width=_pW; _pCanvas.height=_pH;
+    _pCtx=_pCanvas.getContext('2d');
+    // pre-warm cache
+    ['🍪','🧁','⭐','✨','💰'].forEach(e=>{_getEC(e,22);_getEC(e,16);});
+}
+function spawnParticles(x,y,char='🍪') {
+    if(!_pCtx) return;
+    const cnt=4, img=_getEC(char,18);
+    for(let i=0;i<cnt;i++) {
+        const a=(Math.PI*2*i/cnt)+Math.random()*.5, spd=2+Math.random()*2.5;
+        _parts.push({x,y,vx:Math.cos(a)*spd*3,vy:Math.sin(a)*spd*3-1.5,life:1,decay:.05,img,sz:22});
+    }
+}
+function tickParticles(dt) {
+    if(!_pCtx) return;
+    if(_parts.length===0) { _pCtx.clearRect(0,0,_pW,_pH); return; }
+    _pCtx.clearRect(0,0,_pW,_pH);
+    for(let i=_parts.length-1;i>=0;i--) {
+        const p=_parts[i];
+        p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=.2*dt;
+        p.life-=p.decay*dt;
+        if(p.life<=0){_parts.splice(i,1);continue;}
+        _pCtx.globalAlpha=p.life;
+        const s=p.sz*p.life;
+        _pCtx.drawImage(p.img,p.x-s/2,p.y-s/2,s,s);
+    }
+    _pCtx.globalAlpha=1;
+}
+
+// ══════════════════════════════════════════════════
+//  FLOATING NUMBER POOL
+// ══════════════════════════════════════════════════
+const _fnPool=[];
+const FN_SIZE=8;
+let _lastFnTime=0;
+function initFnPool() {
+    const area=document.getElementById('cookie-area');
+    for(let i=0;i<FN_SIZE;i++) {
+        const el=document.createElement('div');
+        el.className='fn';
+        area.appendChild(el);
+        _fnPool.push({el,active:false,y:0,vy:0,life:0});
+    }
+}
+function createFloatingNumber(x,y,val) {
+    const now=performance.now();
+    if(now-_lastFnTime<130) return;
+    _lastFnTime=now;
+    let slot=null;
+    for(let i=0;i<_fnPool.length;i++) if(!_fnPool[i].active){slot=_fnPool[i];break;}
+    if(!slot) return;
+    // Offset y upward by 80px so number appears above the finger
+    const spawnY = y - 80;
+    slot.active=true; slot.y=spawnY; slot.vy=-2.2; slot.life=1;
+    slot.el.innerText='+'+fNum(val);
+    slot.el.style.cssText=`display:block;left:${x-30}px;top:${spawnY}px;opacity:1`;
+}
+function tickFnPool(dt) {
+    for(let i=0;i<_fnPool.length;i++) {
+        const s=_fnPool[i];
+        if(!s.active) continue;
+        s.y+=s.vy*dt; s.life-=0.045*dt;
+        if(s.life<=0){s.active=false;s.el.style.display='none';}
+        else{s.el.style.top=s.y+'px';s.el.style.opacity=s.life;}
+    }
+}
+
+// ══════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════
+const isMobile=true; // always treat as mobile in this build
+let cookies=0,cps=0,clickPower=1,totalClicks=0,clickUpgradeCost=10,totalClickPoints=0,totalTime=0;
+let allTimeClicks=0,allTimeCookies=0,allTimePlayTime=0,goldenCookiesClicked=0,allTimeCupcakes=0;
+let lastDailyReward=0;
+let comboCount=0,comboMultiplier=1,comboTimeout=null;
+let ownedUpgrades={'click':0,'1':0,'2':0,'bakery':0,'3':0};
+let autoUpgrades={
+    '1':{cost:15,power:1,name:'Clicker'},
+    '2':{cost:100,power:5,name:'Grandma'},
+    'bakery':{cost:500,power:20,name:'Shop'},
+    '3':{cost:2000,power:100,name:'Factory'}
+};
+let evoLevel=1,gameFinished=false,gameStarted=false,newGamePlusActive=false;
+let isEvolving=false;
+const recipeNames=['Cookies','Donuts','Cupcakes','Cake','Croissants','Pancakes','Waffles','Pastry','Pudding','Lollipops','Candies','Chocolate','Ice Cream','Dessert','Pretzels'];
+const evoIcons=['🍪','🍩','🧁','🍰','🥐','🥞','🧇','🥧','🍮','🍭','🍬','🍫','🍦','🍨','🥨'];
+let totalEvoMultiplier=0,totalEarnedThisRun=0;
+
+// Golden cookie
+let goldenCookieActive=false,goldenCookieElement=null,goldenCookieTimer=null;
+let goldenTimeLeft=10,clicksSinceLastGolden=0,lastClickTime=Date.now();
+let clickMultiplierActive=false,clickMultiplierValue=1,clickMultiplierTimeout=null;
+let pendingGoldenBonus=null,bonusModalOpen=false;
+
+// YT
+let player,ytReady=false,ytInterval=null,ytTimer=30,ytActive=false,ytBoostActive=false;
+let boostRemaining=60,tvSpawnTimer=0,boostInterval=null;
+const ytVideos=['0bHfxvHNVys','IficW6liKL4','P2sv9XuoM1c','QA52wumvKxE','b5zplOwZM_k','wCVIfdbI1U8','L3JZS2R_D6k','BJU6OyDPMEY','BzM9CYuPW8M','0yAesneUMxg'];
+
+// Bonus
+let bonusCookies=0;
+const bonusUpgrades={
+    oven:{name:"Golden Oven",icon:"🔥",level:0,baseCost:10,costMult:1.5,desc:"+5% CPS per level",maxLevel:20},
+    tax:{name:"Cookie Tax",icon:"🍬",level:0,baseCost:15,costMult:1.6,desc:"-3% cost per level",maxLevel:20},
+    fingers:{name:"Magnetic Fingers",icon:"🧲",level:0,baseCost:20,costMult:1.7,desc:"+2% crit chance per level",maxLevel:15},
+    battery:{name:"Reinforced Battery",icon:"⚡",level:0,baseCost:12,costMult:1.4,desc:"+5s ×2 duration per level",maxLevel:24},
+    diploma:{name:"Golden Diploma",icon:"📜",level:0,baseCost:10,costMult:1.45,desc:"+15% from achievements per level",maxLevel:20},
+    lucky:{name:"Lucky Cupcake",icon:"🍀",level:0,baseCost:25,costMult:1.8,desc:"+3% chance for +3 cupcakes",maxLevel:15},
+    offline:{name:"Night Boost",icon:"🌙",level:0,baseCost:30,costMult:1.9,desc:"+5% offline CPS",maxLevel:10}
+};
+
+// Achievements
+let activeAchs=[];
+const achTypes=['click','total','cps','clickPoints','time'];
+
+// ══════════════════════════════════════════════════
+//  EVO
+// ══════════════════════════════════════════════════
+function getEvoGoal(){return 1000000*Math.pow(5,evoLevel-1);}
+function updateEvoDisplay(){
+    const goal=getEvoGoal(),prog=Math.min((totalEarnedThisRun/goal)*100,100);
+    document.getElementById('evo-fill').style.width=prog+'%';
+    if(totalEarnedThisRun>=goal){
+        const surplus=Math.floor(totalEarnedThisRun/goal);
+        const pot=0.05+Math.min(surplus-1,5)*0.01;
+        document.getElementById('evo-text').innerText=`READY! +${(pot*100).toFixed(1)}%`;
+        // Show evo side button
+        const sideBtn=document.getElementById('evo-side-btn');
+        if(sideBtn){sideBtn.innerText=evoIcons[Math.min(evoLevel,evoIcons.length-1)];sideBtn.style.display='block';}
+    } else {
+        document.getElementById('evo-text').innerText=`${fNum(totalEarnedThisRun)} / ${fNum(goal)} (${Math.floor(prog)}%)`;
+        const sideBtn=document.getElementById('evo-side-btn');
+        if(sideBtn){sideBtn.style.display='none';}
+    }
+    document.getElementById('evo-bonus-info').innerText=`Permanent Bonus: +${(totalEvoMultiplier*100).toFixed(1)}%`;
+}
+function openEvoModal(){
+    const goal=getEvoGoal();
+    if(totalEarnedThisRun<goal) return;
+    const surplus=Math.floor(totalEarnedThisRun/goal),reward=0.05+Math.min(surplus-1,5)*0.01;
+    const nextIcon=evoIcons[Math.min(evoLevel,evoIcons.length-1)];
+    document.getElementById('evo-modal-title').innerText=`Evolution into ${nextIcon}`;
+    document.getElementById('evo-modal-desc').innerText=`Do you want to evolve? Your permanent production bonus will increase by +${(reward*100).toFixed(1)}%.\n(Maximum +10% per level)\n\n✅ Cupcakes (${bonusCookies} 🧁) and bonus shop upgrades will REMAIN!\n✅ Permanent bonus carries over!`;
+    openModal('evo-modal'); playSfx(1500);
+}
+
+// ══════════════════════════════════════════════════
+//  GOLDEN COOKIE
+// ══════════════════════════════════════════════════
+function spawnGoldenCookie(){
+    if(goldenCookieActive) return;
+    const area=document.getElementById('cookie-area');
+    const aw=area.offsetWidth, ah=area.offsetHeight;
+    const x=Math.floor(Math.random()*(aw-80)), y=Math.floor(Math.random()*(ah*0.7)+20);
+    goldenCookieElement=document.createElement('div');
+    goldenCookieElement.className='golden-cookie';
+    goldenCookieElement.innerHTML='🌟<div class="golden-timer">⏱️ <span id="golden-time">10</span>s</div>';
+    goldenCookieElement.style.left=x+'px'; goldenCookieElement.style.top=y+'px';
+    goldenCookieElement.addEventListener('touchend', onGoldenCookieClick, {passive:false});
+    goldenCookieElement.addEventListener('mousedown', onGoldenCookieClick);
+    area.appendChild(goldenCookieElement);
+    goldenCookieActive=true; goldenTimeLeft=10; playSfx(1000);
+    goldenCookieTimer=setInterval(()=>{
+        goldenTimeLeft--;
+        const t=document.getElementById('golden-time');
+        if(t) t.innerText=goldenTimeLeft;
+        if(goldenTimeLeft<=0) removeGoldenCookie();
+    },1000);
+}
+function removeGoldenCookie(){
+    if(goldenCookieElement){goldenCookieElement.remove();goldenCookieElement=null;}
+    clearInterval(goldenCookieTimer);
+    goldenCookieActive=false; goldenTimeLeft=10; clicksSinceLastGolden=0;
+}
+function onGoldenCookieClick(e){
+    e.stopPropagation(); e.preventDefault(); e.stopImmediatePropagation();
+    goldenCookiesClicked++; removeGoldenCookie();
+    const rand=Math.random();
+    let bonusType,bonusIcon,bonusDesc,bonusValue;
+    if(rand<0.4){
+        const mult=0.05+Math.random()*0.10, evoBonus=1+(evoLevel*0.1);
+        const amount=Math.floor(totalEarnedThisRun*mult*evoBonus);
+        bonusType='cookies'; bonusIcon='💰'; bonusDesc='Instant Cookies!';
+        bonusValue=`+${fNum(amount)} 🍪`; pendingGoldenBonus={type:'cookies',value:amount};
+    } else if(rand<0.7){
+        const amount=5+Math.floor(Math.random()*11)+Math.floor(evoLevel*0.5);
+        bonusType='cupcakes'; bonusIcon='🧁'; bonusDesc='Bonus Cupcakes!';
+        bonusValue=`+${amount} 🧁`; pendingGoldenBonus={type:'cupcakes',value:amount};
+    } else {
+        const mult=Math.random()<0.5?5:10;
+        bonusType='multiplier'; bonusIcon='🔥'; bonusDesc='Click Multiplier!';
+        bonusValue=`×${mult} for 30s`; pendingGoldenBonus={type:'multiplier',value:mult};
+    }
+    document.getElementById('golden-modal-icon').innerText=bonusIcon;
+    document.getElementById('golden-modal-desc').innerText=bonusDesc;
+    document.getElementById('golden-modal-val').innerText=bonusValue;
+    openModal('golden-modal'); bonusModalOpen=true; playSfx(1200);
+}
+function activateGoldenBonus(){
+    if(!pendingGoldenBonus) return;
+    const bonus=pendingGoldenBonus;
+    if(bonus.type==='cookies'){
+        cookies=Math.min(cookies+bonus.value,Number.MAX_SAFE_INTEGER);
+        totalEarnedThisRun=Math.min(totalEarnedThisRun+bonus.value,Number.MAX_SAFE_INTEGER);
+        allTimeCookies=Math.min(allTimeCookies+bonus.value,Number.MAX_SAFE_INTEGER);
+        spawnParticles(_pW/2,_pH/2,'💰');
+    } else if(bonus.type==='cupcakes'){
+        bonusCookies=Math.min(bonusCookies+bonus.value,50000);
+        allTimeCupcakes=Math.min(allTimeCupcakes+bonus.value,Number.MAX_SAFE_INTEGER);
+        for(let i=0;i<Math.min(bonus.value,5);i++)
+            setTimeout(()=>spawnParticles(_pW/2+Math.random()*60-30,_pH/2,'🧁'),i*80);
+    } else if(bonus.type==='multiplier'){
+        clickMultiplierActive=true; clickMultiplierValue=bonus.value;
+        document.getElementById('mult-value').innerText=bonus.value;
+        document.getElementById('click-mult-bar').style.display='block';
+        clearTimeout(clickMultiplierTimeout);
+        if(window._mci) clearInterval(window._mci);
+        let tl=30; document.getElementById('mult-timer').innerText=tl;
+        window._mci=setInterval(()=>{tl--;document.getElementById('mult-timer').innerText=tl;if(tl<=0)clearInterval(window._mci);},1000);
+        clickMultiplierTimeout=setTimeout(()=>{
+            clickMultiplierActive=false; clickMultiplierValue=1;
+            document.getElementById('click-mult-bar').style.display='none';
+            if(window._mci){clearInterval(window._mci);window._mci=null;}
+        },30000);
+    }
+    pendingGoldenBonus=null; bonusModalOpen=false;
+    closeModal('golden-modal'); updateDisplay(); saveGame();
+}
+// Spawn check every 5s
+setInterval(()=>{
+    if(!gameStarted||goldenCookieActive||gameFinished||bonusModalOpen||clickMultiplierActive) return;
+    let chance=0.10+Math.min(clicksSinceLastGolden/50,10)*0.01;
+    if(Date.now()-lastClickTime<10000) chance+=0.05;
+    chance=Math.min(chance,0.30);
+    if(Math.random()<chance) spawnGoldenCookie();
+},5000);
+
+// ══════════════════════════════════════════════════
+//  CLICK HANDLER
+// ══════════════════════════════════════════════════
+function handleCookieClick(e){
+    if(!gameStarted) return;
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    allTimeClicks++; clicksSinceLastGolden++; lastClickTime=Date.now();
+    comboCount++;
+    if(comboCount>=45) comboMultiplier=3;
+    else if(comboCount>=20) comboMultiplier=2;
+    else comboMultiplier=1;
+    updateComboDisplay();
+    let power=clickPower*comboMultiplier*(1+totalEvoMultiplier);
+    if(newGamePlusActive) power*=2;
+    if(clickMultiplierActive) power*=clickMultiplierValue;
+    if(Math.random()<Math.min(1.0,bonusUpgrades.fingers.level*0.02)){power*=10;}
+    const ytMult=ytBoostActive?5:1;
+    const val=power*ytMult;
+    cookies=Math.min(cookies+val,Number.MAX_SAFE_INTEGER);
+    totalEarnedThisRun=Math.min(totalEarnedThisRun+val,Number.MAX_SAFE_INTEGER);
+    allTimeCookies=Math.min(allTimeCookies+val,Number.MAX_SAFE_INTEGER);
+    totalClickPoints+=val;
+    totalClicks+=(comboMultiplier*ytMult*(clickMultiplierActive?clickMultiplierValue:1));
+    // Get touch/click position relative to cookie-area - ALWAYS use cookie center
+    let cx, cy;
+    const cookieAreaRect = document.getElementById('cookie-area').getBoundingClientRect();
+    const cookieRect = document.getElementById('cookie').getBoundingClientRect();
+    cx = cookieRect.left - cookieAreaRect.left + cookieRect.width / 2;
+    cy = cookieRect.top - cookieAreaRect.top + cookieRect.height / 2;
+    createFloatingNumber(cx,cy,val);
+    if(_elCookieCount) _elCookieCount.innerText=fNum(cookies);
+    playSfx(600);
+    clearTimeout(comboTimeout);
+    comboTimeout=setTimeout(()=>{comboCount=0;comboMultiplier=1;updateComboDisplay();},2500);
+}
+function updateComboDisplay(){
+    const ind=document.getElementById('combo-indicator');
+    if(comboMultiplier>1){
+        ind.style.display='block';
+        document.getElementById('combo-text').innerText=comboMultiplier+'x';
+        document.getElementById('combo-text').style.color=comboMultiplier===3?'#ff0000':'#ff6b35';
+    } else { ind.style.display='none'; }
+}
+
+// ══════════════════════════════════════════════════
+//  UPGRADES
+// ══════════════════════════════════════════════════
+function getNextInc(base,count){const tier=Math.floor(count/10);return base*(1+tier*tier);}
+function buyClickUpgrade(){
+    let cost=Math.floor(clickUpgradeCost*Math.max(0.1,1-(bonusUpgrades.tax.level*0.03)));
+    if(cookies>=cost){
+        cookies-=cost; clickPower+=getNextInc(1,ownedUpgrades['click']); ownedUpgrades['click']++;
+        if(ownedUpgrades['click']<25) clickUpgradeCost*=1.5;
+        else if(ownedUpgrades['click']<50) clickUpgradeCost*=1.35;
+        else clickUpgradeCost*=1.2;
+        playSfx(800); updateDisplay();
+    }
+}
+function buyAutoUpgrade(id){
+    const u=autoUpgrades[id];
+    let cost=Math.floor(u.cost*Math.max(0.1,1-(bonusUpgrades.tax.level*0.03)));
+    if(cookies>=cost){
+        cookies-=cost; cps+=getNextInc(u.power,ownedUpgrades[id]); ownedUpgrades[id]++;
+        if(ownedUpgrades[id]<25) u.cost*=1.4;
+        else if(ownedUpgrades[id]<50) u.cost*=1.3;
+        else u.cost*=1.15;
+        playSfx(800); updateDisplay();
+    }
+}
+
+// ══════════════════════════════════════════════════
+//  DISPLAY UPDATE (slow path)
+// ══════════════════════════════════════════════════
+let _elCookieCount=null, _elCpsCount=null;
+function updateDisplay(){
+    if(!_elCookieCount){_elCookieCount=document.getElementById('cookie-count');_elCpsCount=document.getElementById('cps-count');}
+    _elCookieCount.innerText=fNum(cookies);
+    const ovenMult=1+(bonusUpgrades.oven.level*0.05);
+    let finalCps=(cps*ovenMult)*(1+totalEvoMultiplier);
+    if(ytBoostActive) finalCps*=5;
+    _elCpsCount.innerText=fNum(finalCps);
+    document.getElementById('click-power-count').innerText=fNum(ytBoostActive?(clickPower*(1+totalEvoMultiplier)*5):(clickPower*(1+totalEvoMultiplier)));
+    const disc=Math.max(0.1,1-(bonusUpgrades.tax.level*0.03));
+    document.getElementById('desc_click').innerText=`Cost: ${fNum(clickUpgradeCost*disc)}`;
+    document.getElementById('cnt_click').innerText=`x${ownedUpgrades['click']}`;
+    document.getElementById('pwr_info_click').innerText=`Power: +${getNextInc(1,ownedUpgrades['click'])}`;
+    document.getElementById('upg_click').disabled=cookies<(clickUpgradeCost*disc);
+    for(let id in autoUpgrades){
+        const u=autoUpgrades[id];
+        document.getElementById(`pwr_info_${id}`).innerText=`Power: +${getNextInc(u.power,ownedUpgrades[id])}`;
+        document.getElementById(`desc_${id}`).innerText=`Cost: ${fNum(u.cost*disc)}`;
+        document.getElementById(`cnt_${id}`).innerText=`x${ownedUpgrades[id]}`;
+        document.getElementById(`upg_${id}`).disabled=cookies<(u.cost*disc);
+    }
+    updateAchs(); updateEvoDisplay();
+    // shop pulse
+    let canAfford=false;
+    for(let id in bonusUpgrades){const b=bonusUpgrades[id];const c=Math.floor(b.baseCost*Math.pow(b.costMult,b.level));if(bonusCookies>=c){canAfford=true;break;}}
+    const shopBtn=document.getElementById('bonus-shop-btn');
+    if(canAfford){shopBtn.classList.add('shop-notif');}else{shopBtn.classList.remove('shop-notif');}
+}
+
+// ══════════════════════════════════════════════════
+//  ACHIEVEMENTS
+// ══════════════════════════════════════════════════
+function formatTimeSec(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=Math.floor(s%60);const p=n=>n.toString().padStart(2,'0');return h>0?`${p(h)}:${p(m)}:${p(sc)}`:`${p(m)}:${p(sc)}`;}
+function createAch(slot){
+    let cur=activeAchs.filter(a=>a!==null).map(a=>a.checkType);
+    let avail=achTypes.filter(t=>!cur.includes(t));
+    const type=avail.length>0?avail[Math.floor(Math.random()*avail.length)]:achTypes[Math.floor(Math.random()*achTypes.length)];
+    let name='',goal=0,reward=0,checkType='',startVal=0;
+    if(type==='click'){name='Clicking';goal=Math.floor(totalClicks*1.4+100+(slot*100));reward=Math.floor(goal*3);checkType='clicks';startVal=totalClicks;}
+    else if(type==='total'){name='Treasury';goal=Math.floor(totalEarnedThisRun*1.5+1000+(slot*400));reward=Math.floor(goal*0.5);checkType='total';startVal=totalEarnedThisRun;}
+    else if(type==='clickPoints'){name='Click Power';goal=Math.floor(totalClickPoints*1.5+1000+(slot*500));reward=Math.floor(goal*0.2);checkType='clickPoints';startVal=totalClickPoints;}
+    else if(type==='time'){name='Customer';goal=Math.floor(totalTime+120+(slot*60));reward=Math.floor(goal*80*(1+evoLevel*0.5));checkType='time';startVal=totalTime;}
+    else{name='Automation';goal=Math.floor(cps*1.5+100+(slot*50));reward=Math.floor(goal*8);checkType='cps';startVal=cps;}
+    const hasBonus=Math.random()<(1/6);
+    const ach={uid:Date.now()+Math.random(),name,goal,reward,checkType,hasBonus,startVal};
+    const div=document.createElement('div');
+    div.className='ach-card'; div.id=`ach-${ach.uid}`;
+    div.innerHTML=`<div class="ach-top"><span class="ach-name">${ach.name}</span><span class="ach-reward">+${fNum(ach.reward)} 🍪</span></div>${hasBonus?'<span class="ach-bonus">🧁</span>':''}<div class="ach-track"><div class="ach-fill" id="pb-${ach.uid}" style="width:0%"></div><div class="ach-prog" id="txt-${ach.uid}">0/0</div></div>`;
+    document.getElementById('ach-col').appendChild(div);
+    setTimeout(()=>{const pb=document.getElementById(`pb-${ach.uid}`);if(pb)pb.style.transition='width .8s ease';},50);
+    activeAchs[slot]=ach;
+}
+function updateAchs(){
+    activeAchs.forEach((ach,i)=>{
+        if(!ach) return;
+        let val;
+        switch(ach.checkType){case'clicks':val=totalClicks;break;case'clickPoints':val=totalClickPoints;break;case'cps':val=cps;break;case'time':val=totalTime;break;case'total':val=totalEarnedThisRun;break;default:val=cookies;}
+        const prog=Math.min(((val-ach.startVal)/(ach.goal-ach.startVal))*100,100);
+        const pb=document.getElementById(`pb-${ach.uid}`),txt=document.getElementById(`txt-${ach.uid}`);
+        if(pb) pb.style.width=prog+'%';
+        if(txt) txt.innerText=ach.checkType==='time'?`${formatTimeSec(val)}/${formatTimeSec(ach.goal)}`:`${fNum(val)}/${fNum(ach.goal)}`;
+        if(val>=ach.goal){
+            const el=document.getElementById(`ach-${ach.uid}`);
+            if(el && !ach._completing){
+                ach._completing=true;
+                activeAchs[i]=null;
+                // Dźwięk osiągnięcia - max jeden co 400ms
+                try {
+                    const now=audioCtx.currentTime;
+                    if(now-_lastAchSoundTime>=0.4){
+                        _lastAchSoundTime=now;
+                        const vol=parseFloat(document.getElementById('sfx-volume')?.value||0.5);
+                        if(vol>0){
+                            const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+                            o.frequency.setValueAtTime(900,now);
+                            g.gain.setValueAtTime(vol,now);
+                            g.gain.exponentialRampToValueAtTime(0.0001,now+0.3);
+                            o.connect(g);g.connect(audioCtx.destination);
+                            o.start();o.stop(now+0.3);
+                        }
+                    }
+                } catch(e){}
+                setTimeout(()=>{
+                    let finalR=ach.reward*(1+totalEvoMultiplier)*(1+(bonusUpgrades.diploma.level*0.15));
+                    cookies+=finalR; totalEarnedThisRun+=finalR;
+                    spawnParticles(_pW/2,_pH/2);
+                    if(ach.hasBonus){let bg=Math.floor(Math.random()*5)+1;if(Math.random()<bonusUpgrades.lucky.level*0.03)bg+=3;bonusCookies=Math.min(bonusCookies+bg,50000);allTimeCupcakes=Math.min(allTimeCupcakes+bg,Number.MAX_SAFE_INTEGER);spawnParticles(_pW/2,_pH/2,'🧁');}
+                    el.style.transform='scale(0)'; el.style.opacity='0';
+                    setTimeout(()=>{el.remove();createAch(i);},400);
+                },300);
+            }
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════
+//  YT
+// ══════════════════════════════════════════════════
+function onYouTubeIframeAPIReady(){ytReady=true;}
+function onPlayerStateChange(event){
+    if(event.data==YT.PlayerState.PLAYING){
+        if(!ytInterval) ytInterval=setInterval(()=>{
+            ytTimer--;
+            document.getElementById('yt-timer').innerText=`Remaining: ${ytTimer}s`;
+            if(ytTimer<=0){clearInterval(ytInterval);ytInterval=null;document.getElementById('claim-btn').classList.add('active');document.getElementById('yt-timer').innerText='You can claim your bonus!';}
+        },1000);
+    } else {if(ytInterval){clearInterval(ytInterval);ytInterval=null;}}
+}
+function openYTModal(){
+    playSfx(1500); ytActive=true;
+    document.getElementById('yt-trigger').style.display='none';
+    openModal('yt-modal');
+    ytTimer=30; document.getElementById('claim-btn').classList.remove('active');
+    document.getElementById('yt-timer').innerText='Watch: 30s';
+    const rid=ytVideos[Math.floor(Math.random()*ytVideos.length)];
+    if(ytReady){
+        if(!player){player=new YT.Player('player',{videoId:rid,playerVars:{autoplay:1,mute:1,controls:1,rel:0},events:{onStateChange:onPlayerStateChange}});}
+        else{player.loadVideoById(rid);player.playVideo();}
+    } else {
+        let attempts=0;
+        const waitYT=setInterval(()=>{
+            attempts++;
+            if(ytReady){clearInterval(waitYT);
+                if(!player){player=new YT.Player('player',{videoId:rid,playerVars:{autoplay:1,mute:1,controls:1,rel:0},events:{onStateChange:onPlayerStateChange}});}
+                else{player.loadVideoById(rid);player.playVideo();}
+            } else if(attempts>=20){clearInterval(waitYT);showToast('⚠️ YouTube nie odpowiada.',3000);ytActive=false;closeModal('yt-modal');}
+        },500);
+    }
+}
+function ytClose(){ytActive=false;if(player&&player.pauseVideo)player.pauseVideo();if(ytInterval){clearInterval(ytInterval);ytInterval=null;}}
+function claimYTBonus(){
+    if(ytTimer>0) return;
+    if(boostInterval){clearInterval(boostInterval);boostInterval=null;}
+    ytBoostActive=true; boostRemaining=60+(bonusUpgrades.battery.level*10);
+    bonusCookies=Math.min(bonusCookies+10,50000); allTimeCupcakes=Math.min(allTimeCupcakes+10,Number.MAX_SAFE_INTEGER);
+    for(let i=0;i<4;i++) setTimeout(()=>spawnParticles(_pW/2+Math.random()*60-30,_pH/2,'🧁'),i*100);
+    document.getElementById('yt-boost-timer').style.display='block';
+    playSfx(1000); document.getElementById('boost-sec').innerText=boostRemaining;
+    boostInterval=setInterval(()=>{
+        boostRemaining--; document.getElementById('boost-sec').innerText=boostRemaining;
+        if(boostRemaining<=0){clearInterval(boostInterval);boostInterval=null;ytBoostActive=false;document.getElementById('yt-boost-timer').style.display='none';tvSpawnTimer=0;}
+    },1000);
+    closeModal('yt-modal'); ytClose();
+}
+
+// ══════════════════════════════════════════════════
+//  BONUS SHOP
+// ══════════════════════════════════════════════════
+function openBonusShop(){playSfx(440);updateBonusShopUI();openModal('bonus-modal');}
+function updateBonusShopUI(){
+    document.getElementById('bonus-wallet-val').innerText=bonusCookies;
+    const list=document.getElementById('bonus-items-list'); list.innerHTML='';
+    for(let id in bonusUpgrades){
+        const b=bonusUpgrades[id], cost=Math.floor(b.baseCost*Math.pow(b.costMult,b.level));
+        const item=document.createElement('div'); item.className='bitem';
+        item.innerHTML=`<div class="bitem-icon">${b.icon}</div><div class="bitem-info"><h4>${b.name} (Lv: ${b.level})</h4><p>${b.desc}</p><div class="bitem-cost">Cost: ${cost} 🧁</div></div><button class="bbuy-btn" ${b.level>=b.maxLevel?'disabled':(bonusCookies<cost?'disabled':'')} onclick="buyBonusUpg('${id}')">${b.level>=b.maxLevel?'MAX':'BUY'}</button>`;
+        list.appendChild(item);
+    }
+}
+function buyBonusUpg(id){
+    const b=bonusUpgrades[id]; if(b.level>=b.maxLevel) return;
+    const cost=Math.floor(b.baseCost*Math.pow(b.costMult,b.level));
+    if(bonusCookies>=cost){bonusCookies-=cost;b.level++;playSfx(1200);updateBonusShopUI();updateDisplay();saveGame();}
+}
+
+// ══════════════════════════════════════════════════
+//  EVOLUTION ANIMATION + LOGIC
+// ══════════════════════════════════════════════════
+function playEvolutionAnim(newLevel, bonusPct){
+    const flash=document.getElementById('evo-flash');
+    flash.classList.add('flash');
+    setTimeout(()=>flash.classList.remove('flash'),200);
+    const colors=['#ff6b6b','#4ecdc4','#45b7d1','#ffd93d','#95e1d3'];
+    for(let i=0;i<8;i++)
+        setTimeout(()=>spawnParticles(Math.random()*_pW,Math.random()*_pH,['🎊','🎉','⭐','✨'][Math.floor(Math.random()*4)]),i*80);
+    setTimeout(()=>showToast(`⭐ LEVEL ${newLevel}! +${Math.round(bonusPct*100)}% Power`,2500),300);
+    playSfx(1500);
+}
+function evolveGame(){
+    if(isEvolving) return; isEvolving=true;
+    const goal=getEvoGoal(), surplus=Math.floor(totalEarnedThisRun/goal);
+    const reward=0.05+Math.min(surplus-1,5)*0.01;
+    totalEvoMultiplier+=reward; evoLevel++;
+    playEvolutionAnim(evoLevel,reward);
+    cookies=0;cps=0;clickPower=1;totalEarnedThisRun=0;
+    totalClicks=0;totalClickPoints=0;clickUpgradeCost=10;
+    ownedUpgrades={'click':0,'1':0,'2':0,'bakery':0,'3':0};
+    autoUpgrades={'1':{cost:15,power:1,name:'Clicker'},'2':{cost:100,power:5,name:'Grandma'},'bakery':{cost:500,power:20,name:'Shop'},'3':{cost:2000,power:100,name:'Factory'}};
+    document.getElementById('ach-col').innerHTML='';
+    activeAchs=[];
+    for(let i=0;i<5;i++) createAch(i);
+    document.getElementById('cookie').innerText=evoIcons[Math.min(evoLevel-1,evoIcons.length-1)];
+    // evo-trigger-btn removed
+    const sideBtn=document.getElementById('evo-side-btn');
+    if(sideBtn){sideBtn.style.display='none';}
+    closeModal('evo-modal'); checkGameEnd(); saveGame(); updateDisplay();
+    playSfx(1200); setTimeout(()=>{isEvolving=false;},1000);
+}
+
+// ══════════════════════════════════════════════════
+//  RECIPE BOOK
+// ══════════════════════════════════════════════════
+function openRecipeModal(){
+    const list=document.getElementById('recipes-list'); list.innerHTML='';
+    const unlocked=evoLevel-1;
+    document.getElementById('recipes-progress').innerText=`Discovered: ${unlocked}/15`;
+    for(let i=0;i<15;i++){
+        const item=document.createElement('div');
+        item.className=i<unlocked?'ritem':'ritem locked';
+        item.innerHTML=i<unlocked
+            ?`<div class="ritem-icon">${evoIcons[i]}</div><div><div class="ritem-name">${recipeNames[i]}</div><div class="ritem-level">Level ${i+1}</div></div><span style="margin-left:auto">✅</span>`
+            :`<div class="ritem-icon">❓</div><div><div class="ritem-name">??? ???</div><div class="ritem-level">Level ${i+1}</div></div><span style="margin-left:auto">🔒</span>`;
+        list.appendChild(item);
+    }
+    openModal('recipe-modal'); playSfx(800);
+}
+
+// ══════════════════════════════════════════════════
+//  OPTIONS / STATS
+// ══════════════════════════════════════════════════
+function openOptionsModal(){ openModal('options-modal'); playSfx(800); }
+function openStatsModal(){
+    updateStatsDisplay(); openModal('stats-modal'); playSfx(800);
+}
+function updateStatsDisplay(){
+    document.getElementById('stat-all-cookies').innerText=fNum(allTimeCookies);
+    document.getElementById('stat-all-clicks').innerText=fNum(allTimeClicks);
+    document.getElementById('stat-all-time').innerText=formatTime(allTimePlayTime);
+    document.getElementById('stat-golden').innerText=goldenCookiesClicked;
+    document.getElementById('stat-cupcakes').innerText=allTimeCupcakes;
+}
+function resetGame(){if(confirm('Reset all progress?')){localStorage.removeItem('cookieClickerSaveV16');location.reload();}}
+
+// ══════════════════════════════════════════════════
+//  SPLASH OVERLAY (options/stats on splash)
+// ══════════════════════════════════════════════════
+function showSplashPanel(type){
+    const menuMusic=document.getElementById('menu-music');
+    if(menuMusic.paused){menuMusic.volume=0.2;menuMusic.play().catch(()=>{});}
+    playSfx(800);
+    const box=document.querySelector('#sp-overlay .modal-box');
+    if(type==='options'){
+        box.innerHTML=`<h2>⚙️ Options</h2>
+        <label style="display:block;font-size:18px;margin:12px 0">🎵 Music<input type="range" min="0" max="1" step="0.1" value="0.2" oninput="document.getElementById('bg-volume')&&(document.getElementById('bg-volume').value=this.value);updateMusicVol()" style="width:100%;margin-top:4px"></label>
+        <label style="display:block;font-size:18px;margin:12px 0">🔊 Sounds<input type="range" min="0" max="1" step="0.1" value="0.5" onchange="document.getElementById('sfx-volume')&&(document.getElementById('sfx-volume').value=this.value)" style="width:100%;margin-top:4px"></label>
+        <button class="modal-btn btn-red" onclick="resetGame()" style="width:100%;margin-top:8px">🗑️ Reset Game</button>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();document.getElementById('sp-overlay').classList.remove('show')" style="margin-top:8px">Close</button>`;
+    } else {
+        try{const s=JSON.parse(localStorage.getItem('cookieClickerSaveV16'));if(s){const d=s.data||s;const clamp=(v,a,b)=>Math.max(a,Math.min(v||0,b));allTimeClicks=clamp(d.allTimeClicks,0,Number.MAX_SAFE_INTEGER);allTimeCookies=clamp(d.allTimeCookies,0,Number.MAX_SAFE_INTEGER);allTimePlayTime=clamp(d.allTimePlayTime,0,365*24*3600);goldenCookiesClicked=clamp(d.goldenCookiesClicked,0,100000);allTimeCupcakes=clamp(d.allTimeCupcakes,0,100000);}}catch(e){}
+        box.innerHTML=`<h2>📊 Statistics</h2>
+        <div class="stat-row"><span class="stat-lbl">🍪 Total Cookies</span><span class="stat-val">${fNum(allTimeCookies)}</span></div>
+        <div class="stat-row"><span class="stat-lbl">👆 Total Clicks</span><span class="stat-val">${fNum(allTimeClicks)}</span></div>
+        <div class="stat-row"><span class="stat-lbl">⏱️ Play Time</span><span class="stat-val">${formatTime(allTimePlayTime)}</span></div>
+        <div class="stat-row"><span class="stat-lbl">🌟 Golden Cookies</span><span class="stat-val">${goldenCookiesClicked}</span></div>
+        <div class="stat-row"><span class="stat-lbl">🧁 Cupcakes</span><span class="stat-val">${allTimeCupcakes}</span></div>
+        <button class="modal-btn btn-grey" onclick="playSfxClose();document.getElementById('sp-overlay').classList.remove('show')" style="margin-top:12px">Close</button>`;
+    }
+    document.getElementById('sp-overlay').classList.add('show');
+}
+
+// ══════════════════════════════════════════════════
+//  GAME END
+// ══════════════════════════════════════════════════
+function checkGameEnd(){
+    if(evoLevel===16&&!gameFinished){gameFinished=true;setTimeout(showEndingModal,1000);}
+}
+function showEndingModal(){
+    document.getElementById('e-cupcakes').innerText=bonusCookies;
+    document.getElementById('e-time').innerText=formatTime(allTimePlayTime);
+    document.getElementById('e-cookies').innerText=fNum(totalEarnedThisRun);
+    openModal('ending-modal');
+    for(let i=0;i<10;i++) setTimeout(()=>spawnParticles(Math.random()*_pW,Math.random()*_pH,['🎊','🎉'][Math.floor(Math.random()*2)]),i*120);
+}
+function startNewGamePlus(){
+    if(confirm('Start New Game+?\n• Keep all shop upgrades!\n• ×2 production bonus!\n• Evolutions reset.')){
+        newGamePlusActive=true;
+        cookies=0;cps=0;clickPower=1;totalClicks=0;totalClickPoints=0;totalTime=0;clickUpgradeCost=10;
+        ownedUpgrades={'click':0,'1':0,'2':0,'bakery':0,'3':0};
+        autoUpgrades={'1':{cost:15,power:1,name:'Clicker'},'2':{cost:100,power:5,name:'Grandma'},'bakery':{cost:500,power:20,name:'Shop'},'3':{cost:2000,power:100,name:'Factory'}};
+        evoLevel=1;totalEvoMultiplier=0;totalEarnedThisRun=0;gameFinished=false;
+        activeAchs=[];document.getElementById('ach-col').innerHTML='';
+        for(let i=0;i<5;i++) createAch(i);
+        document.getElementById('cookie').innerText=evoIcons[0];
+        closeModal('ending-modal'); updateDisplay(); saveGame();
+        showToast('🎉 New Game+ started! ×2 bonus to everything!',3000);
+    }
+}
+
+// ══════════════════════════════════════════════════
+//  DAILY REWARD
+// ══════════════════════════════════════════════════
+function checkDailyReward(){
+    const now=Date.now(), oneDay=24*60*60*1000;
+    if(lastDailyReward>0&&now-lastDailyReward>=oneDay){
+        setTimeout(()=>{openModal('daily-modal');playSfx(1500);},1000);
+    } else if(lastDailyReward===0){lastDailyReward=now;saveGame();}
+}
+function claimDailyReward(){
+    playSfx(1200);
+    bonusCookies=Math.min(bonusCookies+25,50000);
+    allTimeCupcakes=Math.min(allTimeCupcakes+25,Number.MAX_SAFE_INTEGER);
+    for(let i=0;i<6;i++) setTimeout(()=>spawnParticles(_pW/2+Math.random()*80-40,_pH/2,'🧁'),i*80);
+    lastDailyReward=Date.now();
+    closeModal('daily-modal'); updateDisplay(); saveGame();
+}
+
+// ══════════════════════════════════════════════════
+//  SAVE / LOAD
+// ══════════════════════════════════════════════════
+function saveGame(){
+    const s={cookies,cps,clickPower,totalClicks,totalClickPoints,clickUpgradeCost,ownedUpgrades,autoUpgrades,bonusCookies,bonusUpgrades,evoLevel,totalEvoMultiplier,totalEarnedThisRun,lastSave:Date.now(),allTimeClicks,allTimeCookies,allTimePlayTime,goldenCookiesClicked,allTimeCupcakes,lastDailyReward};
+    const str=JSON.stringify(s), hash=simpleHash(str+'GRANDMA_SECRET_2025');
+    localStorage.setItem('cookieClickerSaveV16',JSON.stringify({data:JSON.parse(str),hash}));
+    const icon=document.getElementById('save-icon');
+    icon.style.opacity='1'; clearTimeout(icon._t); icon._t=setTimeout(()=>icon.style.opacity='0',2000);
+}
+function loadGame(){
+    const saved=localStorage.getItem('cookieClickerSaveV16'); if(!saved) return;
+    try {
+        const saveData=JSON.parse(saved);
+        const d=saveData.data||saveData;
+        const MS=Number.MAX_SAFE_INTEGER, clamp=(v,a,b)=>Math.max(a,Math.min(v||0,b));
+        cookies=clamp(d.cookies,0,MS); cps=clamp(d.cps,0,1e12);
+        clickPower=clamp(d.clickPower,1,1e10); totalClicks=clamp(d.totalClicks,0,MS);
+        totalClickPoints=clamp(d.totalClickPoints,0,MS); clickUpgradeCost=clamp(d.clickUpgradeCost,10,1e15);
+        ownedUpgrades=d.ownedUpgrades||{'click':0,'1':0,'2':0,'bakery':0,'3':0};
+        autoUpgrades=d.autoUpgrades;
+        bonusCookies=clamp(d.bonusCookies,0,50000); evoLevel=clamp(d.evoLevel,1,15);
+        totalEvoMultiplier=clamp(d.totalEvoMultiplier,0,10); totalEarnedThisRun=clamp(d.totalEarnedThisRun,0,MS);
+        allTimeClicks=clamp(d.allTimeClicks,0,MS); allTimeCookies=clamp(d.allTimeCookies,0,MS);
+        allTimePlayTime=clamp(d.allTimePlayTime,0,365*24*3600); goldenCookiesClicked=clamp(d.goldenCookiesClicked,0,100000);
+        allTimeCupcakes=clamp(d.allTimeCupcakes,0,100000);
+        const now=Date.now();
+        lastDailyReward=d.lastDailyReward&&d.lastDailyReward<=now?d.lastDailyReward:0;
+        for(let k in d.bonusUpgrades) if(bonusUpgrades[k]) bonusUpgrades[k].level=clamp(d.bonusUpgrades[k].level,0,100);
+        // Offline earnings
+        if(d.lastSave){
+            const tOff=Math.min((now-d.lastSave)/1000, 24*3600);
+            if(tOff>10){
+                const ovenM=1+(bonusUpgrades.oven.level*0.05), offM=1+(bonusUpgrades.offline.level*0.05);
+                const finalC=(cps*ovenM*offM)*(1+totalEvoMultiplier);
+                const earn=Math.floor(Math.min(finalC*tOff,1e15));
+                if(earn>0){cookies=Math.min(cookies+earn,MS);totalEarnedThisRun=Math.min(totalEarnedThisRun+earn,MS);alert(`Welcome back!\n\nAway: ${formatTime(tOff)}\nEarned: ${fNum(earn)} 🍪`);}
+            }
+        }
+    } catch(e){console.error('Save load failed',e); return;}
+    document.getElementById('cookie').innerText=evoIcons[Math.min(evoLevel-1,evoIcons.length-1)];
+    updateDisplay();
+}
+
+// ══════════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════════
+let _lastFast=0, _lastSlow=0, _lastPF=0;
+// CPS tick — osobny interwał, działa nawet gdy karta nieaktywna
+setInterval(()=>{
+    if(!gameStarted) return;
+    const ovenM=1+(bonusUpgrades.oven.level*0.05);
+    let finalCps=(cps*ovenM)*(1+totalEvoMultiplier);
+    if(newGamePlusActive) finalCps*=2;
+    let gain=finalCps/10;
+    if(ytBoostActive) gain*=5;
+    if(gain>0){
+        cookies=Math.min(cookies+gain,Number.MAX_SAFE_INTEGER);
+        totalEarnedThisRun=Math.min(totalEarnedThisRun+gain,Number.MAX_SAFE_INTEGER);
+        allTimeCookies=Math.min(allTimeCookies+gain,Number.MAX_SAFE_INTEGER);
+    }
+    if(_gameVisible && _elCookieCount) _elCookieCount.innerText=fNum(cookies);
+},100);
+
+function gameLoop(ts){
+    requestAnimationFrame(gameLoop);
+    if(!_gameVisible) return;
+    const dt=Math.min((ts-_lastPF)/16.67,3); _lastPF=ts;
+    tickParticles(dt); tickFnPool(dt);
+    if(!gameStarted) return;
+    if(ts-_lastSlow>=800){
+        _lastSlow=ts;
+        updateDisplay();
+    }
+}
+requestAnimationFrame(gameLoop);
+setInterval(()=>{
+    if(!gameStarted) return;
+    totalTime++; allTimePlayTime++;
+    if(!ytActive&&!ytBoostActive){tvSpawnTimer++;if(tvSpawnTimer>=120){const ytBtn=document.getElementById('yt-trigger');ytBtn.style.display='block';ytBtn.classList.add('yt-notif');}}
+},1000);
+setInterval(saveGame,20000);
+window.onbeforeunload=saveGame;
+
+// ── PAGE VISIBILITY: pause when screen turns off or tab is hidden ──
+let _gameVisible=true;
+let _pausedIntervals = [];
+document.addEventListener('visibilitychange',()=>{
+    _gameVisible=!document.hidden;
+    if(document.hidden){
+        saveGame();
+        if(audioCtx.state==='running') audioCtx.suspend();
+        const gm=document.getElementById('game-music');
+        if(gm&&!gm.paused) gm.pause();
+    } else {
+        if(audioCtx.state==='suspended') audioCtx.resume();
+        const gm=document.getElementById('game-music');
+        if(gm&&gm.paused&&gameStarted) gm.play().catch(()=>{});
+        // Offline earnings przy powrocie do karty
+        if(gameStarted){
+            try{
+                const saved=localStorage.getItem('cookieClickerSaveV16');
+                if(saved){
+                    const d=JSON.parse(saved); const d2=d.data||d;
+                    if(d2.lastSave){
+                        const now=Date.now();
+                        const tOff=Math.min((now-d2.lastSave)/1000, 24*3600);
+                        if(tOff>10){
+                            const ovenM=1+(bonusUpgrades.oven.level*0.05), offM=1+(bonusUpgrades.offline.level*0.05);
+                            const finalC=(cps*ovenM*offM)*(1+totalEvoMultiplier);
+                            const earn=Math.floor(Math.min(finalC*tOff,1e15));
+                            if(earn>0){
+                                cookies=Math.min(cookies+earn,Number.MAX_SAFE_INTEGER);
+                                totalEarnedThisRun=Math.min(totalEarnedThisRun+earn,Number.MAX_SAFE_INTEGER);
+                                allTimeCookies=Math.min(allTimeCookies+earn,Number.MAX_SAFE_INTEGER);
+                                showToast('⏱️ Away: '+formatTime(tOff)+' | +'+fNum(earn)+' 🍪', 4000);
+                                saveGame();
+                            }
+                        }
+                    }
+                }
+            }catch(e){}
+        }
+    }
+});
+
+// ══════════════════════════════════════════════════
+//  INIT / START
+// ══════════════════════════════════════════════════
+window.onload=()=>{
+    const saved=localStorage.getItem('cookieClickerSaveV16');
+    if(saved) document.getElementById('play-btn').innerHTML='🔄 CONTINUE';
+    const menuMusic=document.getElementById('menu-music');
+    menuMusic.volume=0.2;
+    menuMusic.play().catch(()=>{});
+};
+
+function startGame(){
+    playSfx(1200);
+    gameStarted=true;
+    const menuMusic=document.getElementById('menu-music'), gameMusic=document.getElementById('game-music');
+    menuMusic.pause(); menuMusic.currentTime=0;
+    const splash=document.getElementById('splash');
+    splash.classList.add('hide');
+    setTimeout(()=>{
+        splash.style.display='none';
+        const game=document.getElementById('game');
+        game.classList.add('show');
+        gameMusic.volume=0.2;
+        gameMusic.play().catch(()=>{});
+        loadGame();
+        initCanvas(); initFnPool();
+        // resize canvas on orientation change
+        window.addEventListener('resize',()=>{
+            const area=document.getElementById('cookie-area');
+            _pW=area.offsetWidth; _pH=area.offsetHeight;
+            _pCanvas.width=_pW; _pCanvas.height=_pH;
+        });
+        // Touch events on cookie — use JS class to avoid stuck :active on fast taps
+        const cookieEl=document.getElementById('cookie');
+        function _cookieDown(e){
+            cookieEl.classList.remove('bounce');
+            void cookieEl.offsetWidth;
+            cookieEl.classList.add('bounce');
+            handleCookieClick(e);
+        }
+        function _cookieUp(){}
+        cookieEl.addEventListener('touchstart', _cookieDown, {passive:true});
+        cookieEl.addEventListener('touchend', _cookieUp, {passive:true});
+        cookieEl.addEventListener('touchcancel', _cookieUp, {passive:true});
+        cookieEl.addEventListener('mousedown', _cookieDown);
+        cookieEl.addEventListener('mouseup', _cookieUp);
+        // Also touch on whole cookie-area (bigger hit target)
+        document.getElementById('cookie-area').addEventListener('touchstart',e=>{
+            if(e.target.classList.contains('golden-cookie')||e.target.closest('.golden-cookie')) return;
+            if(e.target===cookieEl||cookieEl.contains(e.target)) return; // already handled
+            handleCookieClick(e);
+        },{passive:true});
+        if(activeAchs.length===0) for(let i=0;i<5;i++) createAch(i);
+        checkDailyReward();
+        updateDisplay();
+    },400);
+}
+</script>
+</body>
+</html>
